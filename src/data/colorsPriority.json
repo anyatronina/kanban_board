@@ -1,0 +1,14 @@
+[
+  {
+    "text": "rgba(141, 95, 1, 1)",
+    "backgroundText": "rgba(255, 247, 214, 1)"
+  },
+  {
+    "text": "rgba(141, 1, 1, 1)",
+    "backgroundText": "rgba(255, 214, 214, 1)"
+  },
+  {
+    "text": "rgba(1, 141, 15, 1)",
+    "backgroundText": "rgba(214, 255, 216, 1)"
+  }
+]
