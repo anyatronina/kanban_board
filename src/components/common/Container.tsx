@@ -10,7 +10,7 @@ const ContainerStyled = styled.div`
 const Container: React.FC = () => {
   return (
     <ContainerStyled>
-      <ColumnsContainer></ColumnsContainer>
+      <ColumnsContainer />
     </ContainerStyled>
   );
 };

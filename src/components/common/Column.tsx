@@ -7,12 +7,13 @@ import {
 } from "@dnd-kit/sortable";
 import TaskCard from "./TaskCard";
 import IconPlus from "../ui/IconPlus";
-import { addTask, getTasksLength } from "../../store/taskSlice";
+import { addTask, getAllTasks } from "../../store/taskSlice";
 import { DragOverlay, useDroppable } from "@dnd-kit/core";
 import { useDispatch } from "react-redux";
-import { useSelector } from "react-redux";
 import InvisibleDropZone from "../ui/InvisibleDropZone";
 import { TaskProps } from "../../types/types";
+import { generateNewId } from "../../helpers/generateNewId";
+import { useSelector } from "react-redux";
 
 interface ColumnProps {
   id: number;
@@ -36,18 +37,18 @@ const Column: React.FC<ColumnProps> = ({
 }) => {
   const { setNodeRef } = useDroppable({ id });
   const dispatch = useDispatch();
-  const tasksLength = useSelector(getTasksLength);
+  const tasksList = useSelector(getAllTasks);
 
   const handleAddTask = (i: number) => {
     const newTask = {
-      id: tasksLength,
+      id: generateNewId(tasksList),
       taskName: "",
       description: "",
       assigneeId: null,
       dueDate: "",
       priorityId: null,
       statusId: i,
-      order: tasksLength,
+      order: generateNewId(tasksList),
     };
     dispatch(addTask(newTask));
   };
@@ -80,7 +81,13 @@ const Column: React.FC<ColumnProps> = ({
         </SortableContext>
 
         <DragOverlay>
-          {activeTask ? <TaskCard task={activeTask} color="blue" /> : null}
+          {activeTask ? (
+            <TaskCard
+              task={activeTask}
+              color="rgba(83, 123, 243, 1)"
+              isOverlay={true}
+            />
+          ) : null}
         </DragOverlay>
         <Button color={col.text} onClick={() => handleAddTask(id)}>
           <IconPlus />
