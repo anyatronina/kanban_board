@@ -21,6 +21,8 @@ import {
 import Column from "./Column";
 import { arrayMove } from "@dnd-kit/sortable";
 import { TaskProps } from "../../types/types";
+import { calculateProgress } from "../../helpers/calculateProgress";
+import ProgressBar from "../ui/ProgressBar";
 
 const ColumnsContainer: React.FC = () => {
   const tasks = useSelector(getAllTasks);
@@ -133,6 +135,7 @@ const ColumnsContainer: React.FC = () => {
           />
         ))}
       </DndContext>
+      <ProgressBar progress={calculateProgress(tasks)} />
     </ColumnsContainerStyled>
   );
 };
@@ -140,6 +143,7 @@ const ColumnsContainer: React.FC = () => {
 const ColumnsContainerStyled = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: auto min-content;
   gap: 16px;
   height: 100%;
 `;

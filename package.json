@@ -16,13 +16,13 @@
     "@types/react-dom": "^19.1.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.55.0",
     "react-redux": "^9.2.0",
     "react-scripts": "5.0.1",
     "styled-components": "^6.1.17",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
-  "homepage": "https://anyatronina.github.io/kanban_board",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

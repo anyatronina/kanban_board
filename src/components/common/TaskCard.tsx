@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import styled from "styled-components";
-import { deleteTask } from "../../store/taskSlice";
+import { deleteTask, editTask } from "../../store/taskSlice";
 import dictionary from "../../data/dictionary.json";
 import Badge from "../ui/Badge";
 import colorsStatus from "../../data/colorsStatus.json";
@@ -9,6 +9,7 @@ import colorsPriority from "../../data/colorsPriority.json";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TaskProps } from "../../types/types";
+import { useForm } from "react-hook-form";
 
 interface TaskCardProps {
   color: string;
@@ -23,7 +24,16 @@ type ColorType = {
   backgroundText: string;
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ color, task }) => {
+interface FormInput {
+  title: string | null;
+  description: string | null;
+}
+
+const TaskCard: React.FC<TaskCardProps> = ({
+  color,
+  task,
+  isOverlay = false,
+}) => {
   const {
     taskName,
     description,
@@ -48,8 +58,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ color, task }) => {
     id: id,
   });
 
+  const [editingField, setEditingField] = useState<string | null>(null);
+
+  const { register, handleSubmit, setValue, watch } = useForm({
+    defaultValues: {
+      title: taskName,
+      description: description,
+    },
+  });
+
   const style = {
-    opacity: isDragging ? 0.3 : 1,
+    // opacity: isDragging ? 0.3 : 1,
     transform: CSS.Transform.toString(transform),
     transition,
   };
@@ -87,6 +106,33 @@ const TaskCard: React.FC<TaskCardProps> = ({ color, task }) => {
     e.preventDefault();
   };
 
+  useEffect(() => {
+    setValue("title", taskName);
+    setValue("description", description);
+  }, [setValue]);
+
+  const onSubmit = (data: FormInput) => {
+    if (!editingField) return;
+
+    dispatch(
+      editTask({ ...task, taskName: data.title, description: data.description })
+    );
+    setEditingField(null);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      if (editingField && !(target && target.closest("input, textarea"))) {
+        handleSubmit(onSubmit)();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [editingField, handleSubmit]);
+
   return (
     <TaskCardStyled
       ref={setNodeRef}
@@ -95,63 +141,96 @@ const TaskCard: React.FC<TaskCardProps> = ({ color, task }) => {
       {...listeners}
       color={color}
       onContextMenu={handleRightClick}
-      isDragging={isDragging}
+      $isDragging={isDragging}
     >
-      <Title color={taskName ? "black" : "rgba(143, 143, 143, 1)"}>
-        <img src="./svgs/circle.svg" alt="" width={16} height={16} />
-        <span>{taskName ? taskName : "Новая задача"}</span>
-        <IconTrash
-          onClick={handleDelete}
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          src="./svgs/trash.svg"
-          alt=""
-          width={20}
-          height={20}
-        />
-      </Title>
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        <Title color={taskName ? "black" : "rgba(143, 143, 143, 1)"}>
+          <img src="./svgs/circle.svg" alt="" width={16} height={16} />
+          {editingField === "title" ? (
+            <Textarea
+              rows={2}
+              {...register("title")}
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit(onSubmit)()}
+            />
+          ) : (
+            <span onDoubleClick={() => setEditingField("title")}>
+              {taskName ? taskName : "Новая задача"}
+            </span>
+          )}
 
-      {assigneeId && (
-        <Info>
-          <Name>
-            <IconName>{getNameAssignee(assigneeId)[0]}</IconName>
-            <span>{getNameAssignee(assigneeId)}</span>
-          </Name>
-          <span>•</span>
-          <div>{transformDate(dueDate)}</div>
-        </Info>
-      )}
-
-      <Badges>
-        <Badge
-          color={badgeColor.text}
-          bgColor={badgeColor.backgroundText}
-          text={getStatusName(statusId)}
-          src={badgeColor.src}
-        />
-        {priorityId !== null && (
-          <Badge
-            color={(priorityColor as ColorType).text}
-            bgColor={(priorityColor as ColorType).backgroundText}
-            text={getPriorityName(priorityId)}
+          <IconTrash
+            onClick={handleDelete}
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            src="./svgs/trash.svg"
+            alt=""
+            width={20}
+            height={20}
           />
-        )}
-      </Badges>
+        </Title>
 
-      {description && <Description>{description}</Description>}
+        {assigneeId && (
+          <Info>
+            <Name>
+              <IconName>{getNameAssignee(assigneeId)[0]}</IconName>
+              <span>{getNameAssignee(assigneeId)}</span>
+            </Name>
+            <span>•</span>
+            <div>{transformDate(dueDate)}</div>
+          </Info>
+        )}
+
+        <Badges>
+          <Badge
+            color={badgeColor.text}
+            bgColor={badgeColor.backgroundText}
+            text={getStatusName(statusId)}
+            src={badgeColor.src}
+          />
+          {priorityId !== null && (
+            <Badge
+              color={(priorityColor as ColorType).text}
+              bgColor={(priorityColor as ColorType).backgroundText}
+              text={getPriorityName(priorityId)}
+            />
+          )}
+        </Badges>
+
+        {editingField === "description" ? (
+          <Textarea
+            rows={3}
+            {...register("description")}
+            autoFocus
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit(onSubmit)()}
+          />
+        ) : (
+          <Description
+            color={
+              !!description ? "rgba(33, 33, 33, 1)" : " rgba(143, 143, 143, 1)"
+            }
+            onDoubleClick={() => setEditingField("description")}
+          >
+            {description ? description : "Добавить описание"}
+          </Description>
+        )}
+      </Form>
     </TaskCardStyled>
   );
 };
 
 const TaskCardStyled = styled.div<{
-  isDragging?: boolean;
-  isOverlay?: boolean;
+  $isDragging?: boolean;
+  $isOverlay?: boolean;
 }>`
-  opacity: ${({ isDragging }) => (isDragging ? "0" : "1 !important")};
+  opacity: ${({ $isDragging }) => ($isDragging ? ".3" : "1 !important")};
   background-color: white;
   padding: 16px;
   border-radius: 16px;
   border: 1px solid ${({ color }) => color};
+`;
+
+const Form = styled.form`
   gap: 16px;
   display: flex;
   flex-direction: column;
@@ -178,12 +257,15 @@ const Info = styled.div`
   gap: 12px;
   align-items: center;
 `;
+
 const Badges = styled.div`
   display: flex;
   gap: 12px;
 `;
+
 const Description = styled.div`
   font-size: 14px;
+  color: ${({ color }) => color};
 `;
 
 const Name = styled.div`
@@ -198,6 +280,16 @@ const IconName = styled.div`
   border: 0.5px solid rgba(19, 157, 142, 1);
   background: rgba(233, 251, 249, 1);
   color: rgba(10, 158, 142, 1);
+`;
+
+const Textarea = styled.textarea`
+  outline: none;
+  border: none;
+  background: rgba(106, 105, 105, 0.1);
+  font-size: 16px;
+  resize: none;
+  border-radius: 10px;
+  padding: 4px 4px 4px 6px;
 `;
 
 export default TaskCard;
